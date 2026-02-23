@@ -1,0 +1,16 @@
+export const colors = {
+  bg: '#050508',
+  surface: '#141418',
+  surfaceLight: '#1E1E24',
+  purple: '#7C6AEF',
+  purpleLight: '#9D8DF7',
+  purpleDark: '#5B4BC7',
+  text: '#FFFFFF',
+  textSecondary: '#8E8E93',
+  bubbleOut: '#2D2560',
+  bubbleIn: '#1C1C22',
+  red: '#FF3B30',
+  green: '#34C759',
+  glassBg: 'rgba(20,20,24,0.8)',
+  glassBorder: 'rgba(255,255,255,0.08)',
+};

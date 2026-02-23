@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "PrivateChat",
+    "slug": "privatechat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050508"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.privatechat.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#050508"
+      },
+      "package": "com.privatechat.app",
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "READ_MEDIA_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-document-picker",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Разрешить доступ к микрофону для записи голосовых сообщений"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Разрешить доступ к фото для отправки в чат"
+        }
+      ]
+    ]
+  }
+}
