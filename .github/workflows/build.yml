@@ -35,7 +35,7 @@ jobs:
       - name: Enable minification + arm64 only
         run: |
           echo "android.enableProguardInReleaseBuilds=true" >> android/gradle.properties
-          cd android/app && sed -i 's/ndk {/ndk {\n            abiFilters "arm64-v8a"/' build.gradle
+          echo "reactNativeArchitectures=arm64-v8a" >> android/gradle.properties
 
       - name: Build APK
         working-directory: android
