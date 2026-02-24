@@ -35,7 +35,6 @@ jobs:
       - name: Enable minification
         run: |
           echo "android.enableProguardInReleaseBuilds=true" >> android/gradle.properties
-          echo "android.enableShrinkResourcesInReleaseBuilds=true" >> android/gradle.properties
 
       - name: Build APK
         working-directory: android
