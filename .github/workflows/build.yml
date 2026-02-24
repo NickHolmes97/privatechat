@@ -32,6 +32,11 @@ jobs:
       - name: Set SDK path
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
+      - name: Enable minification
+        run: |
+          echo "android.enableProguardInReleaseBuilds=true" >> android/gradle.properties
+          echo "android.enableShrinkResourcesInReleaseBuilds=true" >> android/gradle.properties
+
       - name: Build APK
         working-directory: android
         run: ./gradlew assembleRelease
