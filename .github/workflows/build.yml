@@ -32,9 +32,10 @@ jobs:
       - name: Set SDK path
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
-      - name: Enable minification
+      - name: Enable minification + arm64 only
         run: |
           echo "android.enableProguardInReleaseBuilds=true" >> android/gradle.properties
+          cd android/app && sed -i 's/ndk {/ndk {\n            abiFilters "arm64-v8a"/' build.gradle
 
       - name: Build APK
         working-directory: android
