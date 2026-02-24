@@ -30,7 +30,7 @@ export default function RoomsScreen({ navigation }) {
   };
 
   const renderRoom = ({ item }) => (
-    <TouchableOpacity style={s.room} onPress={() => navigation.navigate('Chat', { roomId: item.id, roomName: item.name })} activeOpacity={0.7}>
+    <TouchableOpacity style={s.room} onPress={() => navigation.navigate('chat', { roomId: item.id, roomName: item.name })} activeOpacity={0.7}>
       <View style={s.avatar}>
         <Text style={s.avatarText}>{(item.name || '?')[0].toUpperCase()}</Text>
       </View>
@@ -52,10 +52,10 @@ export default function RoomsScreen({ navigation }) {
       <View style={s.header}>
         <Text style={s.headerTitle}>Чаты</Text>
         <View style={s.headerActions}>
-          <TouchableOpacity onPress={() => navigation.navigate('Search')} style={s.headerBtn}>
+          <TouchableOpacity onPress={() => navigation.navigate('search')} style={s.headerBtn}>
             <Ionicons name="search" size={22} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={s.headerBtn}>
+          <TouchableOpacity onPress={() => navigation.navigate('settings')} style={s.headerBtn}>
             <Ionicons name="settings-outline" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
@@ -71,9 +71,9 @@ export default function RoomsScreen({ navigation }) {
       <View style={s.bottomNav}>
         <NavBtn icon="chatbubbles" label="Чаты" active />
         <NavBtn icon="call" label="Звонки" onPress={() => {}} />
-        <NavBtn icon="search" label="Поиск" onPress={() => navigation.navigate('Search')} />
+        <NavBtn icon="search" label="Поиск" onPress={() => navigation.navigate('search')} />
         <NavBtn icon="star" label="Избранное" onPress={() => {}} />
-        <NavBtn icon="person" label="Профиль" onPress={() => navigation.navigate('Profile')} />
+        <NavBtn icon="person" label="Профиль" onPress={() => navigation.navigate('profile')} />
       </View>
     </View>
   );

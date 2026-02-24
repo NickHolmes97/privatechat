@@ -22,6 +22,7 @@
         "backgroundColor": "#050508"
       },
       "package": "com.privatechat.app",
+      "usesClearTextTraffic": true,
       "permissions": [
         "RECORD_AUDIO",
         "CAMERA",

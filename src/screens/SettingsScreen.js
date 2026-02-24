@@ -23,7 +23,7 @@ export default function SettingsScreen({ navigation, onLogout }) {
         <Text style={s.title}>Настройки</Text>
       </View>
       <ScrollView contentContainerStyle={s.content}>
-        <TouchableOpacity style={s.profileCard} onPress={() => navigation.navigate('Profile')}>
+        <TouchableOpacity style={s.profileCard} onPress={() => navigation.navigate('profile')}>
           <View style={s.avatar}><Text style={s.avatarText}>{name[0]?.toUpperCase()}</Text></View>
           <View style={{flex:1}}>
             <Text style={s.profileName}>{name}</Text>

@@ -20,7 +20,7 @@ export default function SearchScreen({ navigation }) {
   const openChat = async (user) => {
     try {
       const r = await matrix.createDM(user.user_id);
-      navigation.replace('Chat', { roomId: r.room_id, roomName: user.display_name || user.user_id });
+      navigation.navigate('chat', { roomId: r.room_id, roomName: user.display_name || user.user_id });
     } catch(_){}
   };
 

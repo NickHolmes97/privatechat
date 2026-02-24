@@ -159,19 +159,39 @@ function processState(room, ev) {
 // Messages
 async function loadMessages(roomId, limit = 50) {
   const r = await mx('GET', `rooms/${encodeURIComponent(roomId)}/messages?dir=b&limit=${limit}`);
-  return (r.chunk || []).filter(e => e.type === 'm.room.message').map(e => ({
-    id: e.event_id,
-    sender: e.sender,
-    senderName: rooms[roomId]?.members[e.sender] || e.sender?.split(':')[0]?.slice(1) || '?',
-    body: e.content?.body || '',
-    msgtype: e.content?.msgtype || 'm.text',
-    ts: e.origin_server_ts || 0,
-    isMe: e.sender === userId,
-    url: e.content?.url,
-    info: e.content?.info,
-    filename: e.content?.filename,
-    relatesTo: e.content?.['m.relates_to']
-  })).reverse();
+  const events = (r.chunk || []).filter(e => e.type === 'm.room.message');
+  // Build edits map: original event_id -> latest edit content
+  const edits = {};
+  for (const e of events) {
+    const rel = e.content?.['m.relates_to'];
+    if (rel?.rel_type === 'm.replace' && rel?.event_id) {
+      const nc = e.content?.['m.new_content'];
+      if (nc) edits[rel.event_id] = nc;
+    }
+  }
+  return events
+    .filter(e => {
+      const rel = e.content?.['m.relates_to'];
+      return !(rel?.rel_type === 'm.replace'); // exclude edit events themselves
+    })
+    .map(e => {
+      const edited = edits[e.event_id];
+      const content = edited || e.content;
+      return {
+        id: e.event_id,
+        sender: e.sender,
+        senderName: rooms[roomId]?.members[e.sender] || e.sender?.split(':')[0]?.slice(1) || '?',
+        body: content?.body || '',
+        msgtype: content?.msgtype || 'm.text',
+        ts: e.origin_server_ts || 0,
+        isMe: e.sender === userId,
+        url: content?.url,
+        info: content?.info,
+        filename: content?.filename,
+        relatesTo: e.content?.['m.relates_to'],
+        edited: !!edited
+      };
+    }).reverse();
 }
 
 async function sendMessage(roomId, text) {

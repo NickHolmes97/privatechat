@@ -185,6 +185,7 @@ export default function ChatScreen({ route, navigation }) {
             <Text style={s.msgText}>{item.body}</Text>
           )}
           <View style={s.msgMeta}>
+            {item.edited && <Text style={s.editedLabel}>ред.</Text>}
             <Text style={s.msgTime}>{fmtTime(item.ts)}</Text>
             {isMe && <Text style={s.check}>✓</Text>}
           </View>
@@ -316,6 +317,7 @@ const s = StyleSheet.create({
   fileRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   fileName: { color: '#fff', fontSize: 14, flex: 1 },
   msgMeta: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 2 },
+  editedLabel: { color: 'rgba(142,142,147,0.5)', fontSize: 10, marginRight: 4, fontStyle: 'italic' },
   msgTime: { color: 'rgba(142,142,147,0.7)', fontSize: 11 },
   check: { color: colors.purple, fontSize: 11, marginLeft: 4 },
   replyBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, paddingHorizontal: 16, paddingVertical: 8 },
