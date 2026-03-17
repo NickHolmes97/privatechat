@@ -376,31 +376,28 @@ async function sendVideoCircle(roomId, mxcUri, duration, size) {
 let savedRoomId = null;
 
 async function ensureSavedRoom() {
-  if (savedRoomId) return savedRoomId;
-  // Look for existing saved room
+  if (savedRoomId && rooms[savedRoomId]) return savedRoomId;
+  // Look for existing saved room - just match by name
   const list = getRoomList();
   for (const r of list) {
-    if (r.name === "Избранное") {
-      const memberKeys = Object.keys(r.members || {});
-      const onlySelf = memberKeys.length === 0 || (memberKeys.length === 1 && memberKeys[0] === userId);
-      if (onlySelf) {
-        savedRoomId = r.id;
-        return savedRoomId;
-      }
+    if (r.name === "Избранное" || r.name === "⭐ Избранное") {
+      savedRoomId = r.id;
+      return savedRoomId;
     }
   }
-  // Create new saved room
-  const res = await mx("POST", "createRoom", {
-    preset: "private_chat",
-    name: "Избранное",
-    invite: [],
-    creation_content: { "m.federate": false }
-  });
-  savedRoomId = res.room_id;
-  // Force it into rooms cache immediately
-  if (!rooms[savedRoomId]) {
-    rooms[savedRoomId] = { id: savedRoomId, name: "Избранное", members: {}, msgs: [], lastMsg: "", lastTs: Date.now(), unread: 0, avatar: null };
-  }
+  // Create new saved room only if none found
+  try {
+    const res = await mx("POST", "createRoom", {
+      preset: "private_chat",
+      name: "Избранное",
+      invite: [],
+      creation_content: { "m.federate": false }
+    });
+    savedRoomId = res.room_id;
+    if (!rooms[savedRoomId]) {
+      rooms[savedRoomId] = { id: savedRoomId, name: "Избранное", members: {}, msgs: [], lastMsg: "", lastTs: Date.now(), unread: 0, avatar: null };
+    }
+  } catch(e) { console.log('ensureSavedRoom error:', e); }
   return savedRoomId;
 }
 
