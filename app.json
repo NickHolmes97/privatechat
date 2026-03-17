@@ -2,7 +2,7 @@
   "expo": {
     "name": "PrivateChat",
     "slug": "privatechat",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -29,7 +29,8 @@
         "READ_MEDIA_IMAGES",
         "READ_MEDIA_VIDEO",
         "READ_MEDIA_AUDIO"
-      ]
+      ],
+      "usesCleartextTraffic": true
     },
     "plugins": [
       "expo-secure-store",
@@ -45,7 +46,8 @@
         {
           "photosPermission": "Разрешить доступ к фото для отправки в чат"
         }
-      ]
+      ],
+      "./withCleartext"
     ]
   }
 }

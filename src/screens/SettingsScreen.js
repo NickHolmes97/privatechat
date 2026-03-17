@@ -1,88 +1,176 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { clearSession } from '../services/storage';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import matrix from '../services/matrix';
-import { colors } from '../utils/theme';
+import { colors, onThemeChange } from '../utils/theme';
 
-export default function SettingsScreen({ navigation, onLogout }) {
+export default function SettingsScreen({ navigation }) {
+  const [, _themeForce] = React.useState(0);
+  React.useEffect(() => { const u = onThemeChange(() => _themeForce(n=>n+1)); return u; }, []);
+
   const uid = matrix.getUserId() || '';
-  const name = uid.split(':')[0]?.replace('@','') || '';
+  const username = uid.split(':')[0]?.replace('@','') || '';
+  const [displayName, setDisplayName] = useState(username);
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
-  const doLogout = () => {
-    Alert.alert('Выход', 'Вы уверены?', [
-      { text: 'Отмена', style: 'cancel' },
-      { text: 'Выйти', style: 'destructive', onPress: async () => { await clearSession(); matrix.logout(); onLogout(); } }
-    ]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const p = await matrix.getProfile();
+        setDisplayName(p.displayname || username);
+        if (p.avatar_url) setAvatarUrl(matrix.mxcThumb(p.avatar_url, 400, 400));
+      } catch(_){}
+    })();
+  }, []);
+
+  const pickAvatar = async () => {
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8, allowsEditing: true, aspect: [1,1]
+    });
+    if (r.canceled) return;
+    try {
+      const resp = await FileSystem.uploadAsync(
+        `http://45.83.178.10:8008/_matrix/media/v3/upload?filename=avatar.jpg`, r.assets[0].uri,
+        { httpMethod: 'POST', headers: { 'Authorization': `Bearer ${matrix.getToken()}`, 'Content-Type': 'image/jpeg' }, uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT }
+      );
+      const { content_uri } = JSON.parse(resp.body);
+      await matrix.setAvatar(content_uri);
+      setAvatarUrl(matrix.mxcThumb(content_uri, 400, 400));
+    } catch(e) {}
   };
 
+  const initial = (displayName || '?')[0].toUpperCase();
+
+  const menuItems = [
+    { icon: 'person-outline', bg: '#007AFF', label: 'Аккаунт', sub: 'Имя пользователя, «О себе»', screen: 'profile' },
+    { icon: 'chatbubble-outline', bg: '#AF52DE', label: 'Настройки чатов', sub: 'Обои, темы, анимации', screen: 'personalization' },
+    { icon: 'key-outline', bg: '#FF9500', label: 'Конфиденциальность', sub: 'Время захода, устройства, PIN', screen: 'privacy' },
+    { icon: 'notifications-outline', bg: '#FF3B30', label: 'Уведомления', sub: 'Звуки, вибрация, счётчик', screen: 'notifications' },
+    { icon: 'arrow-down-circle-outline', bg: '#30D158', label: 'Данные и память', sub: 'Настройки загрузки медиафайлов', screen: 'datastorage' },
+    { icon: 'folder-outline', bg: '#007AFF', label: 'Папки с чатами', sub: 'Сортировка чатов по папкам', screen: 'folders' },
+    { icon: 'phone-portrait-outline', bg: '#5856D6', label: 'Устройства', sub: 'Управление активными сеансами', screen: 'devices' },
+    { icon: 'language-outline', bg: '#AF52DE', label: 'Язык', sub: 'Русский', screen: 'language' },
+    { icon: 'information-circle-outline', bg: '#8E8E93', label: 'О приложении', sub: 'Версия 1.1.0', screen: 'about' },
+  ];
+
   return (
-    <View style={s.container}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={s.title}>Настройки</Text>
-      </View>
-      <ScrollView contentContainerStyle={s.content}>
-        <TouchableOpacity style={s.profileCard} onPress={() => navigation.navigate('profile')}>
-          <View style={s.avatar}><Text style={s.avatarText}>{name[0]?.toUpperCase()}</Text></View>
-          <View style={{flex:1}}>
-            <Text style={s.profileName}>{name}</Text>
-            <Text style={s.profileUid}>{uid}</Text>
+    <View style={[s.container, {backgroundColor: colors.bg}]}>
+      <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}>
+        {/* Header with avatar */}
+        <View style={s.headerSection}>
+          <View style={s.headerTop}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <View style={{flex:1}} />
+            <TouchableOpacity style={s.headerIcon}>
+              <Ionicons name="search-outline" size={22} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity style={s.headerIcon}>
+              <Ionicons name="ellipsis-vertical" size={22} color="#fff" />
+            </TouchableOpacity>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
 
-        <Text style={s.section}>ВНЕШНИЙ ВИД</Text>
-        <SettingRow icon="color-palette" title="Тема" subtitle="Тёмная" />
-        <SettingRow icon="text" title="Размер текста" subtitle="Стандартный" />
+          {/* Avatar */}
+          <View style={s.avatarWrap}>
+            <TouchableOpacity onPress={pickAvatar} activeOpacity={0.8}>
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={s.avatar} />
+              ) : (
+                <View style={s.avatarPlaceholder}>
+                  <Text style={s.avatarInitial}>{initial}</Text>
+                </View>
+              )}
+              <View style={s.cameraBadge}>
+                <Ionicons name="camera" size={16} color="#fff" />
+              </View>
+            </TouchableOpacity>
+          </View>
 
-        <Text style={s.section}>УВЕДОМЛЕНИЯ</Text>
-        <SettingRow icon="notifications" title="Уведомления" subtitle="Включены" />
+          {/* Name & username */}
+          <Text style={s.displayName}>{displayName}</Text>
+          <Text style={s.userInfo}>@{username}</Text>
+        </View>
 
-        <Text style={s.section}>БЕЗОПАСНОСТЬ</Text>
-        <SettingRow icon="lock-closed" title="PIN-код" subtitle="Не установлен" />
-        <SettingRow icon="eye-off" title="Конфиденциальность" subtitle="Все" />
-        <SettingRow icon="shield-checkmark" title="Шифрование" subtitle="Сквозное" />
+        {/* Menu items */}
+        <View style={s.menuList}>
+          {menuItems.map((item, i) => (
+            <TouchableOpacity
+              key={i}
+              style={s.menuRow}
+              onPress={() => { if (item.screen) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate(item.screen); } }}
+              activeOpacity={0.6}
+            >
+              <View style={[s.menuIcon, { backgroundColor: item.bg }]}>
+                <Ionicons name={item.icon} size={20} color="#fff" />
+              </View>
+              <View style={s.menuContent}>
+                <Text style={s.menuLabel}>{item.label}</Text>
+                <Text style={s.menuSub}>{item.sub}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-        <Text style={s.section}>О ПРИЛОЖЕНИИ</Text>
-        <SettingRow icon="information-circle" title="Версия" subtitle="PrivateChat RN v1.0" />
-        <SettingRow icon="cloud" title="Сервер" subtitle="45.83.178.10" />
-
-        <TouchableOpacity style={s.logoutBtn} onPress={doLogout}>
-          <Text style={s.logoutText}>Выйти</Text>
-        </TouchableOpacity>
+        <View style={{height: 50}} />
       </ScrollView>
     </View>
   );
 }
 
-function SettingRow({ icon, title, subtitle, onPress }) {
-  return (
-    <TouchableOpacity style={s.row} onPress={onPress}>
-      <Ionicons name={icon} size={22} color={colors.purple} />
-      <View style={{flex:1, marginLeft:16}}>
-        <Text style={s.rowTitle}>{title}</Text>
-        {subtitle && <Text style={s.rowSub}>{subtitle}</Text>}
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-    </TouchableOpacity>
-  );
-}
-
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 56, paddingBottom: 12, paddingHorizontal: 16 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  content: { padding: 16 },
-  profileCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 24 },
-  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(124,106,239,0.3)', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  avatarText: { color: colors.purple, fontWeight: 'bold', fontSize: 24 },
-  profileName: { color: '#fff', fontWeight: '600', fontSize: 18 },
-  profileUid: { color: colors.textSecondary, fontSize: 13 },
-  section: { color: colors.purple, fontSize: 13, fontWeight: '600', marginTop: 16, marginBottom: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
-  rowTitle: { color: '#fff', fontSize: 16 },
-  rowSub: { color: colors.textSecondary, fontSize: 13 },
-  logoutBtn: { backgroundColor: 'rgba(255,59,48,0.15)', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 32 },
-  logoutText: { color: colors.red, fontWeight: '600', fontSize: 16 },
+  scroll: { flex: 1 },
+
+  // Header section
+  headerSection: {
+    backgroundColor: colors.surface,
+    paddingBottom: 20,
+    alignItems: 'center',
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  headerTop: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingTop: 50, paddingHorizontal: 8, width: '100%',
+  },
+  backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  headerIcon: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+
+  // Avatar
+  avatarWrap: { marginTop: 8, marginBottom: 12 },
+  avatar: { width: 100, height: 100, borderRadius: 50 },
+  avatarPlaceholder: {
+    width: 100, height: 100, borderRadius: 50,
+    backgroundColor: colors.purple, justifyContent: 'center', alignItems: 'center',
+  },
+  avatarInitial: { color: '#fff', fontSize: 42, fontWeight: 'bold' },
+  cameraBadge: {
+    position: 'absolute', bottom: 2, right: 2,
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: colors.purple, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: colors.surface,
+  },
+
+  // Name
+  displayName: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
+  userInfo: { color: colors.textSecondary, fontSize: 15, marginTop: 4 },
+
+  // Menu
+  menuList: { marginTop: 16 },
+  menuRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 14, paddingHorizontal: 20,
+  },
+  menuIcon: {
+    width: 40, height: 40, borderRadius: 12,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  menuContent: { flex: 1, marginLeft: 16 },
+  menuLabel: { color: colors.text, fontSize: 16, fontWeight: '500' },
+  menuSub: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
 });

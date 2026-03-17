@@ -15,18 +15,8 @@ import CreateGroupScreen from './src/screens/CreateGroupScreen';
 import CreateChannelScreen from './src/screens/CreateChannelScreen';
 import AddMemberScreen from './src/screens/AddMemberScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
-import PrivacyScreen from './src/screens/PrivacyScreen';
-import PersonalizationScreen from './src/screens/PersonalizationScreen';
-import NotificationsScreen from './src/screens/NotificationsScreen';
-import DataStorageScreen from './src/screens/DataStorageScreen';
-import AboutScreen from './src/screens/AboutScreen';
-import FoldersScreen from './src/screens/FoldersScreen';
-import LanguageScreen from './src/screens/LanguageScreen';
-import ChatBgScreen from './src/screens/ChatBgScreen';
-import CallScreen from './src/screens/CallScreen';
-import { onThemeChange, colors, loadThemeFromStorage } from './src/utils/theme';
 
-const SUB_SCREENS = ['chat', 'profile', 'search', 'settings', 'roominfo', 'creategroup', 'createchannel', 'addmember', 'favorites', 'privacy', 'personalization', 'notifications', 'datastorage', 'devices', 'about', 'folders', 'language', 'chatbg'];
+const SUB_SCREENS = ['chat', 'profile', 'search', 'settings', 'roominfo', 'creategroup', 'createchannel', 'addmember', 'favorites'];
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -34,7 +24,6 @@ export default function App() {
   const [screen, setScreen] = useState('rooms');
   const [screenParams, setScreenParams] = useState({});
   const [history, setHistory] = useState([]);
-  const [themeKey, setThemeKey] = useState(0);
 
   const navigate = useCallback((name, params = {}) => {
     setHistory(h => [...h, { screen, params: screenParams }]);
@@ -64,14 +53,8 @@ export default function App() {
   }, [goBack]);
 
   useEffect(() => {
-    const unsub = onThemeChange(() => setThemeKey(k => k + 1));
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
     (async () => {
       try {
-        await loadThemeFromStorage();
         const session = await getSession();
         if (session) {
           matrix.restoreSession(session.token, session.userId, session.deviceId);
@@ -88,7 +71,7 @@ export default function App() {
   if (!loggedIn) {
     return (
       <SafeAreaProvider>
-        <StatusBar style={colors.statusBar || "light"} />
+        <StatusBar style="light" />
         <LoginScreen onLogin={() => { setLoggedIn(true); matrix.startSync(); setScreen('rooms'); }} />
       </SafeAreaProvider>
     );
@@ -98,10 +81,10 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style={colors.statusBar || "light"} />
+      <StatusBar style="light" />
       {screen === 'rooms' && <RoomsScreen navigation={nav} />}
       {screen === 'chat' && <ChatScreen navigation={nav} route={{ params: screenParams }} />}
-      {screen === 'profile' && <ProfileScreen navigation={nav} onLogout={() => setLoggedIn(false)} />}
+      {screen === 'profile' && <ProfileScreen navigation={nav} />}
       {screen === 'search' && <SearchScreen navigation={nav} />}
       {screen === 'settings' && <SettingsScreen navigation={nav} onLogout={() => { setLoggedIn(false); matrix.logout(); matrix.stopSync(); setScreen('rooms'); }} />}
       {screen === 'roominfo' && <RoomInfoScreen navigation={nav} route={{ params: screenParams }} />}
@@ -109,15 +92,6 @@ export default function App() {
       {screen === 'createchannel' && <CreateChannelScreen navigation={nav} />}
       {screen === 'addmember' && <AddMemberScreen navigation={nav} route={{ params: screenParams }} />}
       {screen === 'favorites' && <FavoritesScreen navigation={nav} />}
-      {screen === "privacy" && <PrivacyScreen navigation={nav} />}
-      {screen === "personalization" && <PersonalizationScreen navigation={nav} />}
-      {screen === "notifications" && <NotificationsScreen navigation={nav} />}
-      {screen === "datastorage" && <DataStorageScreen navigation={nav} />}
-      {screen === "about" && <AboutScreen navigation={nav} />}
-      {screen === "folders" && <FoldersScreen navigation={nav} />}
-      {screen === "language" && <LanguageScreen navigation={nav} />}
-      {screen === "chatbg" && <ChatBgScreen navigation={nav} />}
-      {screen === "call" && <CallScreen navigation={nav} route={{ params: screenParams }} />}
     </SafeAreaProvider>
   );
 }
