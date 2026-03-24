@@ -36,6 +36,9 @@ import ChatExport from '../components/ChatExport';
 import SharedLinks from '../components/SharedLinks';
 import ConnectionBar from '../components/ConnectionBar';
 import { colors, onThemeChange, getChatBg } from '../utils/theme';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { TailRight, TailLeft } from '../components/BubbleTail';
 
 
 // SwipeReply - swipe right to reply, left to forward
@@ -629,6 +632,8 @@ export default function ChatScreen({ route, navigation }) {
               <Text style={s.senderName}>{item.senderName}</Text>
             </View>
           )}
+          <View style={{position:'relative'}}>
+            {showSender || !prevMsg || prevMsg.sender !== item.sender ? (isMe ? <TailRight color={colors.bubbleOut} /> : <TailLeft color={colors.bubbleIn} />) : null}
           <View style={[s.bubble, isMe ? [s.bubbleMe, {backgroundColor: colors.bubbleOut}] : [s.bubbleOther, {backgroundColor: colors.bubbleIn}]]}>
             {/* Reply preview */}
             {replyMsg && (
@@ -723,6 +728,7 @@ export default function ChatScreen({ route, navigation }) {
               </View>
             )}
             {isMe && <ReadReceipts readers={getReaders(item.id)} />}
+          </View>
           </View>
         </TouchableOpacity>
         
@@ -843,7 +849,7 @@ export default function ChatScreen({ route, navigation }) {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0} style={[s.container, {backgroundColor: getChatBg()}]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* Header */}
-      <View style={[s.header, {backgroundColor: colors.surface}]}>
+      <BlurView intensity={80} tint="dark" style={s.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
         <TouchableOpacity style={s.headerInfo} onPress={() => navigation.navigate('roominfo', { roomId, roomName })}>
           <View style={s.headerAvatar}><Text style={s.headerAvatarText}>{(roomName||'?')[0].toUpperCase()}</Text></View>
@@ -858,7 +864,7 @@ export default function ChatScreen({ route, navigation }) {
         </TouchableOpacity>
         <TouchableOpacity style={s.headerBtn} onPress={recordVideo}><Ionicons name="videocam" size={20} color="#fff" /></TouchableOpacity>
         <TouchableOpacity style={s.headerBtn}><Ionicons name="call" size={20} color="#fff" /></TouchableOpacity>
-      </View>
+      </BlurView>
 
       {/* Messages */}
       <FlatList ref={flatRef}
