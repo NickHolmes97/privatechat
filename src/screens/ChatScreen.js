@@ -576,7 +576,14 @@ export default function ChatScreen({ route, navigation }) {
         )}
         <DoubleTapLike onDoubleTap={() => matrix.sendReaction(roomId, item.id, '❤️')}>
         <TouchableOpacity activeOpacity={0.7} onLongPress={() => onLongPressMsg(item)} style={[s.msgRow, isMe && s.msgRowMe]}>
-          {showSender && !isMe && <Text style={s.senderName}>{item.senderName}</Text>}
+          {showSender && !isMe && (
+            <View style={{flexDirection:"row", alignItems:"center", marginBottom:2, marginLeft:4}}>
+              <View style={{width:20, height:20, borderRadius:10, backgroundColor:"rgba(124,106,239,0.25)", justifyContent:"center", alignItems:"center", marginRight:6}}>
+                <Text style={{color:colors.purple, fontSize:10, fontWeight:"bold"}}>{(item.senderName||"?")[0].toUpperCase()}</Text>
+              </View>
+              <Text style={s.senderName}>{item.senderName}</Text>
+            </View>
+          )}
           <View style={[s.bubble, isMe ? [s.bubbleMe, {backgroundColor: colors.bubbleOut}] : [s.bubbleOther, {backgroundColor: colors.bubbleIn}]]}>
             {/* Reply preview */}
             {replyMsg && (
