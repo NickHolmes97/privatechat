@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import matrix from './src/services/matrix';
 import { getSession } from './src/services/storage';
 import { initNotifications, onNotificationTap } from './src/services/notifications';
+import { checkForUpdate } from './src/services/updater';
 import LoginScreen from './src/screens/LoginScreen';
 import RoomsScreen from './src/screens/RoomsScreen';
 import ChatScreen from './src/screens/ChatScreen';
@@ -90,6 +91,7 @@ export default function App() {
         }
       } catch(_) {}
       setReady(true);
+      setTimeout(() => checkForUpdate(), 3000);
     })();
     const unsub = onNotificationTap((roomId) => {
       setScreen('chat');
