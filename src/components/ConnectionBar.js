@@ -21,7 +21,8 @@ export default function ConnectionBar({ status }) {
     }).start();
   }, [visible]);
 
-  const st = STATES[status] || STATES.connected;
+  if (!visible) return null;
+  const st = STATES[status] || STATES.connecting;
 
   return (
     <Animated.View style={[s.bar, {backgroundColor: st.bg, transform: [{translateY: slideAnim}]}]}>

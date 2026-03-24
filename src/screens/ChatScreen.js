@@ -25,6 +25,11 @@ import SelectionBar from '../components/SelectionBar';
 import MediaGrid from '../components/MediaGrid';
 import BookmarksList from '../components/BookmarksList';
 import FormatBar from '../components/FormatBar';
+import ReadReceipts from '../components/ReadReceipts';
+import * as Location from 'expo-location';
+import TranslateButton from '../components/TranslateButton';
+import DoubleTapLike from '../components/DoubleTapLike';
+import ContactCard from '../components/ContactCard';
 import ChatExport from '../components/ChatExport';
 import SharedLinks from '../components/SharedLinks';
 import ConnectionBar from '../components/ConnectionBar';
@@ -85,6 +90,9 @@ export default function ChatScreen({ route, navigation }) {
   const [bookmarks, setBookmarks] = useState([]);
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [showFormat, setShowFormat] = useState(false);
+  const [showContactPicker, setShowContactPicker] = useState(false);
+  const [contactResults, setContactResults] = useState([]);
+  const [contactQuery, setContactQuery] = useState('');
   const [showExport, setShowExport] = useState(false);
   const [showSharedLinks, setShowSharedLinks] = useState(false);
   const [connStatus, setConnStatus] = useState(null);
@@ -132,8 +140,32 @@ export default function ChatScreen({ route, navigation }) {
     setLoading(false);
   };
 
+  const searchContacts = async (q) => {
+    setContactQuery(q);
+    if (q.length < 2) { setContactResults([]); return; }
+    try {
+      const users = await matrix.searchUsers(q);
+      setContactResults(users.filter(u => u.userId !== matrix.getUserId()));
+    } catch(e) {}
+  };
+
+  const sendContact = async (user) => {
+    setShowContactPicker(false);
+    setContactQuery('');
+    setContactResults([]);
+    await matrix.sendMessage(roomId, `📇 Контакт: ${user.displayName || user.userId}\n${user.userId}`);
+  };
+
   const sendLocation = async () => {
-    Alert.alert('\u{1F4CD} \u041B\u043E\u043A\u0430\u0446\u0438\u044F', '\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u043B\u043E\u043A\u0430\u0446\u0438\u0438 \u0441\u043A\u043E\u0440\u043E!');
+    try {
+      setAttachMenu(false);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return Alert.alert('Ошибка', 'Нет доступа к геолокации');
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const { latitude, longitude } = loc.coords;
+      const url = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`;
+      await matrix.sendMessage(roomId, `📍 Моя локация\n${url}`);
+    } catch (e) { Alert.alert('Ошибка', e.message); }
   };
 
   const cycleVoiceSpeed = () => {
@@ -437,6 +469,7 @@ export default function ChatScreen({ route, navigation }) {
       const { sound } = await Audio.Sound.createAsync({ uri: url });
       soundRef.current = sound;
       sound.setOnPlaybackStatusUpdate(st => { if (st.didJustFinish) setPlayingId(null); });
+      await sound.setRateAsync(voiceSpeed, true);
       await sound.playAsync(); setPlayingId(msg.id);
     } catch(e) { Alert.alert('Ошибка воспроизведения', e.message); }
   };
@@ -500,6 +533,17 @@ export default function ChatScreen({ route, navigation }) {
     return false;
   };
 
+  const getReaders = (msgId) => {
+    const receipts = matrix.getReadReceipts(roomId);
+    const readers = [];
+    for (const [uid, r] of Object.entries(receipts)) {
+      if (uid !== matrix.getUserId() && r.eventId === msgId) {
+        readers.push({ userId: uid, name: uid.split(':')[0].slice(1) });
+      }
+    }
+    return readers;
+  };
+
   const renderTextWithLinks = (body) => {
     const parts = body.split(URL_REGEX);
     if (parts.length === 1) return <Text style={[s.msgText, {color: colors.text}]}>{body}</Text>;
@@ -530,6 +574,7 @@ export default function ChatScreen({ route, navigation }) {
         {showDate && (
           <View style={s.dateSep}><View style={[s.dateSepLine, {backgroundColor: colors.glassBorder}]} /><Text style={s.dateSepText}>{friendlyDate(item.ts)}</Text><View style={[s.dateSepLine, {backgroundColor: colors.glassBorder}]} /></View>
         )}
+        <DoubleTapLike onDoubleTap={() => matrix.sendReaction(roomId, item.id, '❤️')}>
         <TouchableOpacity activeOpacity={0.7} onLongPress={() => onLongPressMsg(item)} style={[s.msgRow, isMe && s.msgRowMe]}>
           {showSender && !isMe && <Text style={s.senderName}>{item.senderName}</Text>}
           <View style={[s.bubble, isMe ? [s.bubbleMe, {backgroundColor: colors.bubbleOut}] : [s.bubbleOther, {backgroundColor: colors.bubbleIn}]]}>
@@ -551,11 +596,16 @@ export default function ChatScreen({ route, navigation }) {
             )}
             {/* Audio */}
             {item.msgtype === 'm.audio' && (
-              <TouchableOpacity style={s.audioRow} onPress={() => playAudio(item)}>
-                <Ionicons name={playingId === item.id ? 'pause-circle' : 'play-circle'} size={36} color={colors.purple} />
-                <View style={s.waveform}>{Array.from({length:20}).map((_,i) => <View key={i} style={[s.waveBar, { height: 4 + Math.sin(i*0.8)*10, backgroundColor: playingId === item.id ? colors.purple : 'rgba(124,106,239,0.4)' }]} />)}</View>
-                {item.info?.duration > 0 && <Text style={s.audioDur}>{Math.floor(item.info.duration/60000)}:{Math.floor((item.info.duration%60000)/1000).toString().padStart(2,'0')}</Text>}
-              </TouchableOpacity>
+              <View style={{flexDirection:'row', alignItems:'center'}}>
+                <TouchableOpacity style={[s.audioRow, {flex:1}]} onPress={() => playAudio(item)}>
+                  <Ionicons name={playingId === item.id ? 'pause-circle' : 'play-circle'} size={36} color={colors.purple} />
+                  <View style={s.waveform}>{Array.from({length:20}).map((_,i) => <View key={i} style={[s.waveBar, { height: 4 + Math.sin(i*0.8)*10, backgroundColor: playingId === item.id ? colors.purple : 'rgba(124,106,239,0.4)' }]} />)}</View>
+                  {item.info?.duration > 0 && <Text style={s.audioDur}>{Math.floor(item.info.duration/60000)}:{Math.floor((item.info.duration%60000)/1000).toString().padStart(2,'0')}</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity onPress={cycleVoiceSpeed} style={{paddingHorizontal:6}}>
+                  <Text style={{color:colors.purple, fontSize:12, fontWeight:'700'}}>{voiceSpeed}x</Text>
+                </TouchableOpacity>
+              </View>
             )}
             {/* File */}
             {item.msgtype === 'm.file' && (
@@ -600,6 +650,9 @@ export default function ChatScreen({ route, navigation }) {
             )}
             {/* Text */}
             {(item.msgtype === 'm.text' || (!['m.image','m.audio','m.file','m.video'].includes(item.msgtype))) && renderTextWithLinks(item.body)}
+            {/* Link Preview */}
+            {item.msgtype === 'm.text' && (() => { const m = (item.body || '').match(/https?:\/\/[^\s]+/); return m ? <LinkPreview url={m[0]} /> : null; })()}
+            {item.msgtype === 'm.text' && !isMe && <TranslateButton text={item.body} msgId={item.id} />}
             {/* Meta */}
             <View style={s.msgMeta}>
               {item.edited && <Text style={s.editedLabel}>ред.</Text>}
@@ -617,8 +670,10 @@ export default function ChatScreen({ route, navigation }) {
                 ))}
               </View>
             )}
+            {isMe && <ReadReceipts readers={getReaders(item.id)} />}
           </View>
         </TouchableOpacity>
+        </DoubleTapLike>
       </View>
     );
   };
@@ -739,7 +794,7 @@ export default function ChatScreen({ route, navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
         <TouchableOpacity style={s.headerInfo} onPress={() => navigation.navigate('roominfo', { roomId, roomName })}>
           <View style={s.headerAvatar}><Text style={s.headerAvatarText}>{(roomName||'?')[0].toUpperCase()}</Text></View>
-        <ConnectionBar status={connStatus} />
+        {/* <ConnectionBar status={connStatus} /> */}
         <PinnedBar message={pinnedMsg} onPress={() => {}} onClose={() => setPinnedMsg(null)} />
           <View style={{flex:1}}>
             <Text style={[s.headerName, {color: colors.text}]} numberOfLines={1}>{roomName}</Text>
@@ -862,10 +917,39 @@ export default function ChatScreen({ route, navigation }) {
               <View style={[s.attachIcon, {backgroundColor:'#2ECC71'}]}><Ionicons name="location" size={20} color="#fff" /></View>
               <Text style={s.attachLabel}>Локация</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={s.attachItem} onPress={() => { setAttachMenu(false); setShowContactPicker(true); }}>
+              <View style={[s.attachIcon, {backgroundColor:'#3498DB'}]}><Ionicons name="person" size={20} color="#fff" /></View>
+              <Text style={s.attachLabel}>Контакт</Text>
+            </TouchableOpacity>
 
         </View>
       )}
 
+      {/* Contact Picker */}
+      {showContactPicker && (
+        <Modal transparent visible animationType="slide" onRequestClose={() => setShowContactPicker(false)}>
+          <View style={{flex:1, backgroundColor:'rgba(0,0,0,0.5)', justifyContent:'flex-end'}}>
+            <View style={{backgroundColor:colors.surface, borderTopLeftRadius:20, borderTopRightRadius:20, padding:16, maxHeight:'60%'}}>
+              <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
+                <Text style={{color:colors.text, fontSize:18, fontWeight:'700'}}>Отправить контакт</Text>
+                <TouchableOpacity onPress={() => setShowContactPicker(false)}><Ionicons name="close" size={24} color={colors.textSecondary} /></TouchableOpacity>
+              </View>
+              <TextInput style={{backgroundColor:colors.surfaceLight, color:colors.text, borderRadius:12, paddingHorizontal:14, paddingVertical:10, fontSize:15, marginBottom:12}}
+                placeholder="Поиск пользователей..." placeholderTextColor={colors.textSecondary}
+                value={contactQuery} onChangeText={searchContacts} autoFocus />
+              <FlatList data={contactResults} keyExtractor={i => i.userId}
+                renderItem={({item}) => <ContactCard name={item.displayName || item.userId.split(':')[0].slice(1)} userId={item.userId} onPress={() => sendContact(item)} />}
+                ListEmptyComponent={contactQuery.length >= 2 ? <Text style={{color:colors.textSecondary, textAlign:'center', padding:20}}>Никого не найдено</Text> : null}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
+      {/* Format Bar */}
+      {showFormat && <FormatBar onFormat={(style) => {
+        const wrap = {bold:'**', italic:'_', strike:'~~', code:'`', spoiler:'||'}[style] || '';
+        if (wrap) setText(t => wrap + t + wrap);
+      }} />}
       {/* Input - always visible */}
       <View style={[s.inputBar, {backgroundColor: colors.surface}]}>
         {!recording && (
@@ -875,6 +959,7 @@ export default function ChatScreen({ route, navigation }) {
             </TouchableOpacity>
             <TouchableOpacity style={s.inputBtn} onPress={() => setShowEmoji(!showEmoji)}><Ionicons name="happy-outline" size={22} color={colors.textSecondary} /></TouchableOpacity>
             <TouchableOpacity style={s.inputBtn} onPress={() => setShowStickers(!showStickers)}><Ionicons name="cube-outline" size={22} color={colors.textSecondary} /></TouchableOpacity>
+            <TouchableOpacity style={s.inputBtn} onPress={() => setShowFormat(!showFormat)}><Ionicons name="text" size={20} color={showFormat ? colors.purple : colors.textSecondary} /></TouchableOpacity>
             <TextInput ref={inputRef} style={[s.input, {backgroundColor: colors.surfaceLight, color: colors.text}]} value={text}
               onChangeText={t => { setText(t); matrix.sendTyping(roomId, t.length > 0); }}
               placeholder="Сообщение..." placeholderTextColor={colors.textSecondary} multiline maxLength={4096} />

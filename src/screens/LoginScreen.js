@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, ScrollView, Keyboard, TouchableWithoutFeedback, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import matrix from '../services/matrix';
 import { saveSession } from '../services/storage';
@@ -29,6 +29,7 @@ export default function LoginScreen({ onLogin }) {
   };
 
   return (
+    <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <ScrollView style={[s.container, {backgroundColor: colors.bg}]} contentContainerStyle={s.scroll}
         ref={scrollRef} keyboardShouldPersistTaps="handled" bounces={false}>
@@ -70,9 +71,10 @@ export default function LoginScreen({ onLogin }) {
           </TouchableOpacity>
         </View>
         <Text style={s.server}>Сервер: 45.83.178.10</Text>
-        <View style={{ height: 100 }} />
+        <View style={{ height: 300 }} />
       </ScrollView>
     </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 

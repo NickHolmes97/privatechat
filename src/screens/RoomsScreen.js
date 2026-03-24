@@ -56,7 +56,13 @@ export default function RoomsScreen({ navigation }) {
   };
 
   const sortedRooms = () => {
-    const visible = rooms.filter(r => !hiddenIds.includes(r.id));
+    let visible = rooms.filter(r => !hiddenIds.includes(r.id));
+    // Tab filtering
+    if (activeTab === 'personal') visible = visible.filter(r => Object.keys(r.members || {}).length <= 2 && !r.isInvite);
+    else if (activeTab === 'groups') visible = visible.filter(r => Object.keys(r.members || {}).length > 2);
+    else if (activeTab === 'unread') visible = visible.filter(r => r.unread > 0);
+    else if (activeTab === 'channels') visible = visible.filter(r => (r.name || '').startsWith('#'));
+    else if (activeTab === 'bots') visible = visible.filter(r => (r.name || '').toLowerCase().includes('bot'));
     const pinned = visible.filter(r => pinnedIds.includes(r.id));
     const rest = visible.filter(r => !pinnedIds.includes(r.id));
     return [...pinned, ...rest];
@@ -150,8 +156,22 @@ export default function RoomsScreen({ navigation }) {
     return (
       <TouchableOpacity style={s.room} onPress={() => navigation.navigate('chat', { roomId: item.id, roomName: item.name })}
         onLongPress={() => setContextRoom(item)} activeOpacity={0.7}>
-        <View style={s.avatar}>
-          <Text style={s.avatarText}>{(item.name || '?')[0].toUpperCase()}</Text>
+        <View style={{position:'relative'}}>
+          {item.avatar ? (
+            <Image source={{uri: matrix.mxcThumb(item.avatar, 52, 52)}} style={s.avatarImg} />
+          ) : (
+            <View style={s.avatar}>
+              <Text style={s.avatarText}>{(item.name || '?')[0].toUpperCase()}</Text>
+            </View>
+          )}
+          {(() => {
+            const otherUid = Object.keys(item.members || {}).find(k => k !== matrix.getUserId());
+            if (otherUid && Object.keys(item.members || {}).length <= 2) {
+              const p = matrix.getPresence(otherUid);
+              if (p.status === 'online') return <View style={s.onlineDot} />;
+            }
+            return null;
+          })()}
         </View>
         <View style={s.roomInfo}>
           <View style={s.roomTop}>
@@ -337,6 +357,8 @@ const s = StyleSheet.create({
   declineBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.red, justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
   avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(124,106,239,0.3)', justifyContent: 'center', alignItems: 'center' },
   avatarText: { color: colors.purple, fontWeight: 'bold', fontSize: 20 },
+  avatarImg: { width: 52, height: 52, borderRadius: 26 },
+  onlineDot: { position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#34C759', borderWidth: 2, borderColor: colors.bg },
   roomInfo: { flex: 1, marginLeft: 12 },
   roomTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   roomName: { fontSize: 16, fontWeight: '600', color: colors.text, flex: 1, marginRight: 8 },

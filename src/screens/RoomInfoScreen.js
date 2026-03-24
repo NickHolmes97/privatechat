@@ -3,10 +3,41 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert, ScrollView }
 import { Ionicons } from '@expo/vector-icons';
 import matrix from '../services/matrix';
 import AdminPanel from '../components/AdminPanel';
+import SharedLinks from '../components/SharedLinks';
+import ChatExport from '../components/ChatExport';
+import MediaGrid from '../components/MediaGrid';
 import { colors, onThemeChange } from '../utils/theme';
 
 export default function RoomInfoScreen({ route, navigation }) {
   const [showAdmin, setShowAdmin] = React.useState(false);
+  const [showLinks, setShowLinks] = React.useState(false);
+  const [showExport, setShowExport] = React.useState(false);
+  const [showMedia, setShowMedia] = React.useState(false);
+  const [chatLinks, setChatLinks] = React.useState([]);
+  const [chatMsgs, setChatMsgs] = React.useState([]);
+  const [chatImages, setChatImages] = React.useState([]);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const msgs = await matrix.loadMessages(roomId, 200);
+        setChatMsgs(msgs);
+        const urls = [];
+        const imgs = [];
+        msgs.forEach(m => {
+          if (m.msgtype === 'm.text' && m.body) {
+            const matches = m.body.match(/https?:\/\/[^\s]+/g);
+            if (matches) matches.forEach(u => urls.push({ url: u, sender: m.senderName, ts: m.ts }));
+          }
+          if (m.msgtype === 'm.image' && m.url) {
+            imgs.push({ uri: matrix.mxcUrl(m.url), ts: m.ts });
+          }
+        });
+        setChatLinks(urls);
+        setChatImages(imgs);
+      } catch(e) {}
+    })();
+  }, [roomId]);
   const [, _themeForce] = React.useState(0);
   React.useEffect(() => { const u = onThemeChange(() => _themeForce(n=>n+1)); return u; }, []);
 
@@ -85,6 +116,18 @@ export default function RoomInfoScreen({ route, navigation }) {
             <Ionicons name="search" size={20} color={colors.purple} />
             <Text style={s.actionText}>Поиск по чату</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={s.actionRow} onPress={() => setShowMedia(true)}>
+            <Ionicons name="images-outline" size={20} color={colors.purple} />
+            <Text style={s.actionText}>Медиа</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.actionRow} onPress={() => setShowLinks(true)}>
+            <Ionicons name="link-outline" size={20} color={colors.purple} />
+            <Text style={s.actionText}>Ссылки</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.actionRow} onPress={() => setShowExport(true)}>
+            <Ionicons name="download-outline" size={20} color={colors.purple} />
+            <Text style={s.actionText}>Экспорт чата</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={[s.actionRow, { borderBottomWidth: 0 }]} onPress={doLeave}>
             <Ionicons name="exit-outline" size={20} color={colors.red} />
             <Text style={[s.actionText, { color: colors.red }]}>Покинуть чат</Text>
@@ -93,6 +136,9 @@ export default function RoomInfoScreen({ route, navigation }) {
       </ScrollView>
     
         <AdminPanel visible={showAdmin} onAction={(a) => { setShowAdmin(false); Alert.alert("", a + " скоро!"); }} onClose={() => setShowAdmin(false)} />
+        <SharedLinks visible={showLinks} links={chatLinks} onClose={() => setShowLinks(false)} />
+        <ChatExport visible={showExport} roomName={roomName} messages={chatMsgs} onClose={() => setShowExport(false)} />
+        <MediaGrid visible={showMedia} images={chatImages} onSelect={() => {}} onClose={() => setShowMedia(false)} />
       </View>
   );
 }
