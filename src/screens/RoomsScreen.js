@@ -329,9 +329,9 @@ export default function RoomsScreen({ navigation }) {
       <View style={s.bottomNav}>
         <NavBtn icon="chatbubbles" label="Чаты" active />
         <NavBtn icon="call" label="Звонки" onPress={() => {}} />
-        <NavBtn icon="search" label="Поиск" onPress={() => navigation.navigate('search')} />
-        <NavBtn icon="star" label="Избранное" onPress={() => { navigation.navigate('favorites'); }} />
-        <NavBtn icon="settings" label="Настройки" onPress={() => navigation.navigate('settings')} />
+        <NavBtn icon="search" label="Поиск" onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('search'); }} />
+        <NavBtn icon="star" label="Избранное" onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('favorites'); }} />
+        <NavBtn icon="settings" label="Настройки" onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('settings'); }} />
       </View>
 
       {/* FAB */}

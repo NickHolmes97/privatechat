@@ -30,24 +30,31 @@ import * as Location from 'expo-location';
 import TranslateButton from '../components/TranslateButton';
 import DoubleTapLike from '../components/DoubleTapLike';
 import ContactCard from '../components/ContactCard';
+import AnimatedButton from '../components/AnimatedButton';
+import AttachMenuItem from '../components/AttachMenuItem';
 import ChatExport from '../components/ChatExport';
 import SharedLinks from '../components/SharedLinks';
 import ConnectionBar from '../components/ConnectionBar';
 import { colors, onThemeChange, getChatBg } from '../utils/theme';
 
 
-// SwipeReply - swipe right to reply
-function SwipeReply({ onSwipe, children }) {
+// SwipeReply - swipe right to reply, left to forward
+function SwipeReply({ onSwipe, onSwipeLeft, children }) {
   const translateX = useRef(new Animated.Value(0)).current;
   const panResponder = useRef(PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 15 && Math.abs(g.dx) > Math.abs(g.dy) && g.dx > 0,
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 15 && Math.abs(g.dx) > Math.abs(g.dy),
     onPanResponderMove: (_, g) => {
-      if (g.dx > 0 && g.dx < 80) translateX.setValue(g.dx);
+      if (Math.abs(g.dx) < 80) translateX.setValue(g.dx);
     },
     onPanResponderRelease: (_, g) => {
       if (g.dx > 50) {
         Animated.spring(translateX, { toValue: 60, useNativeDriver: true, friction: 8 }).start(() => {
           onSwipe();
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
+        });
+      } else if (g.dx < -50 && onSwipeLeft) {
+        Animated.spring(translateX, { toValue: -60, useNativeDriver: true, friction: 8 }).start(() => {
+          onSwipeLeft();
           Animated.spring(translateX, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
         });
       } else {
@@ -57,9 +64,12 @@ function SwipeReply({ onSwipe, children }) {
   })).current;
   
   return (
-    <View style={{position: 'relative'}}>
-      <Animated.View style={{opacity: translateX.interpolate({inputRange:[0,50],outputRange:[0,1],extrapolate:'clamp'}), position:'absolute', left:4, top:'50%', marginTop:-10}}>
+    <View style={{position: 'relative', overflow: 'hidden'}}>
+      <Animated.View style={{opacity: translateX.interpolate({inputRange:[0,50],outputRange:[0,1],extrapolate:'clamp'}), position:'absolute', left:4, top:'50%', marginTop:-10, zIndex:5}}>
         <Ionicons name="arrow-undo" size={20} color={colors.purple} />
+      </Animated.View>
+      <Animated.View style={{opacity: translateX.interpolate({inputRange:[-50,0],outputRange:[1,0],extrapolate:'clamp'}), position:'absolute', right:4, top:'50%', marginTop:-10, zIndex:5}}>
+        <Ionicons name="arrow-redo" size={20} color={colors.purple} />
       </Animated.View>
       <Animated.View style={{transform: [{translateX}]}} {...panResponder.panHandlers}>
         {children}
@@ -311,6 +321,7 @@ export default function ChatScreen({ route, navigation }) {
 
 
   const send = async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const t = text.trim(); if (!t) return;
     setText(''); setSending(true);
     try {
@@ -609,7 +620,7 @@ export default function ChatScreen({ route, navigation }) {
           <View style={s.dateSep}><View style={[s.dateSepLine, {backgroundColor: colors.glassBorder}]} /><Text style={s.dateSepText}>{friendlyDate(item.ts)}</Text><View style={[s.dateSepLine, {backgroundColor: colors.glassBorder}]} /></View>
         )}
         <DoubleTapLike onDoubleTap={() => matrix.sendReaction(roomId, item.id, '❤️')}>
-        <SwipeReply onSwipe={() => { setReplyMsg(item); inputRef.current?.focus(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}>
+        <SwipeReply onSwipe={() => { setReplyMsg(item); inputRef.current?.focus(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }} onSwipeLeft={() => { setForwardMsg(item); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}>
         <TouchableOpacity activeOpacity={0.7} onLongPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onLongPressMsg(item); }} style={[s.msgRow, isMe && s.msgRowMe]}>
           {showSender && !isMe && (
             <View style={{flexDirection:"row", alignItems:"center", marginBottom:2, marginLeft:4}}>
@@ -957,14 +968,8 @@ export default function ChatScreen({ route, navigation }) {
               <View style={[s.attachIcon, {backgroundColor:'#9B59B6'}]}><Text style={{color:'#fff',fontWeight:'bold',fontSize:14}}>GIF</Text></View>
               <Text style={s.attachLabel}>GIF</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.attachItem} onPress={sendLocation}>
-              <View style={[s.attachIcon, {backgroundColor:'#2ECC71'}]}><Ionicons name="location" size={20} color="#fff" /></View>
-              <Text style={s.attachLabel}>Локация</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={s.attachItem} onPress={() => { setAttachMenu(false); setShowContactPicker(true); }}>
-              <View style={[s.attachIcon, {backgroundColor:'#3498DB'}]}><Ionicons name="person" size={20} color="#fff" /></View>
-              <Text style={s.attachLabel}>Контакт</Text>
-            </TouchableOpacity>
+            <AttachMenuItem icon="location" label="Локация" color="#2ECC71" onPress={sendLocation} delay={200} />
+            <AttachMenuItem icon="person" label="Контакт" color="#1ABC9C" onPress={() => { setAttachMenu(false); setShowContactPicker(true); }} delay={250} />
 
         </View>
       )}
@@ -998,12 +1003,12 @@ export default function ChatScreen({ route, navigation }) {
       <View style={[s.inputBar, {backgroundColor: colors.surface}]}>
         {!recording && (
           <>
-            <TouchableOpacity onPress={() => setAttachMenu(!attachMenu)} style={s.inputBtn}>
+            <AnimatedButton onPress={() => { setAttachMenu(!attachMenu); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={s.inputBtn}>
               <Ionicons name={attachMenu ? 'close' : 'add-circle'} size={26} color={colors.purple} />
-            </TouchableOpacity>
-            <TouchableOpacity style={s.inputBtn} onPress={() => setShowEmoji(!showEmoji)}><Ionicons name="happy-outline" size={22} color={colors.textSecondary} /></TouchableOpacity>
-            <TouchableOpacity style={s.inputBtn} onPress={() => setShowStickers(!showStickers)}><Ionicons name="cube-outline" size={22} color={colors.textSecondary} /></TouchableOpacity>
-            <TouchableOpacity style={s.inputBtn} onPress={() => setShowFormat(!showFormat)}><Ionicons name="text" size={20} color={showFormat ? colors.purple : colors.textSecondary} /></TouchableOpacity>
+            </AnimatedButton>
+            <AnimatedButton style={s.inputBtn} onPress={() => { setShowEmoji(!showEmoji); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}><Ionicons name="happy-outline" size={22} color={showEmoji ? colors.purple : colors.textSecondary} /></AnimatedButton>
+            <AnimatedButton style={s.inputBtn} onPress={() => { setShowStickers(!showStickers); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}><Ionicons name="cube-outline" size={22} color={showStickers ? colors.purple : colors.textSecondary} /></AnimatedButton>
+            <AnimatedButton style={s.inputBtn} onPress={() => { setShowFormat(!showFormat); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}><Ionicons name="text" size={20} color={showFormat ? colors.purple : colors.textSecondary} /></AnimatedButton>
             <TextInput ref={inputRef} style={[s.input, {backgroundColor: colors.surfaceLight, color: colors.text}]} value={text}
               onChangeText={t => { setText(t); matrix.sendTyping(roomId, t.length > 0); }}
               placeholder="Сообщение..." placeholderTextColor={colors.textSecondary} multiline maxLength={4096} />
@@ -1016,7 +1021,7 @@ export default function ChatScreen({ route, navigation }) {
           </View>
         )}
         {text.trim() && !recording ? (
-          <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); send(); }} style={s.sendBtn} activeOpacity={0.7}><Ionicons name="send" size={20} color="#fff" style={{marginLeft:2}} /></TouchableOpacity>
+          <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); send(); }} style={s.sendBtn} activeOpacity={0.7}><Animated.View><Ionicons name="send" size={20} color="#fff" style={{marginLeft:2}} /></Animated.View></TouchableOpacity>
         ) : recording && recLocked ? null : (
           <View
             style={[s.micBtnWrap, recording ? {backgroundColor: colors.red} : {}]}
@@ -1171,6 +1176,7 @@ const s = StyleSheet.create({
   recSendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.purple, justifyContent: 'center', alignItems: 'center' },
   // Attach menu
   attachMenu: { flexDirection: 'row', backgroundColor: colors.surface, paddingVertical: 18, paddingHorizontal: 16, gap: 14, justifyContent: 'center', flexWrap: 'wrap', borderTopWidth: 0.5, borderTopColor: colors.glassBorder },
+  attachItemAnim: { alignItems: 'center', width: 70 },
   attachItem: { alignItems: 'center', width: 70 },
   attachIcon: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginBottom: 6, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
   attachLabel: { color: colors.textSecondary, fontSize: 11 },
@@ -1209,8 +1215,8 @@ const s = StyleSheet.create({
   ctxPreviewName: { color: colors.purple, fontSize: 12, fontWeight: '600', marginBottom: 2 },
   ctxPreviewText: { color: colors.textSecondary, fontSize: 13 },
   reactions: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 14, backgroundColor: colors.surfaceLight, borderRadius: 28, paddingVertical: 10, paddingHorizontal: 8, borderWidth: 0.5, borderColor: 'rgba(124,106,239,0.1)' },
-  reactBtn: { padding: 4 },
-  reactEmoji: { fontSize: 22 },
+  reactBtn: { padding: 6 },
+  reactEmoji: { fontSize: 26 },
   ctxItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4 },
   ctxLabel: { color: colors.text, fontSize: 16, marginLeft: 14 },
   // Forward
