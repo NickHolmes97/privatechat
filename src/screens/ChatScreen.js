@@ -620,7 +620,6 @@ export default function ChatScreen({ route, navigation }) {
           <View style={s.dateSep}><View style={[s.dateSepLine, {backgroundColor: colors.glassBorder}]} /><Text style={s.dateSepText}>{friendlyDate(item.ts)}</Text><View style={[s.dateSepLine, {backgroundColor: colors.glassBorder}]} /></View>
         )}
         <DoubleTapLike onDoubleTap={() => matrix.sendReaction(roomId, item.id, '❤️')}>
-        <SwipeReply onSwipe={() => { setReplyMsg(item); inputRef.current?.focus(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }} onSwipeLeft={() => { setForwardMsg(item); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}>
         <TouchableOpacity activeOpacity={0.7} onLongPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onLongPressMsg(item); }} style={[s.msgRow, isMe && s.msgRowMe]}>
           {showSender && !isMe && (
             <View style={{flexDirection:"row", alignItems:"center", marginBottom:2, marginLeft:4}}>
@@ -726,7 +725,7 @@ export default function ChatScreen({ route, navigation }) {
             {isMe && <ReadReceipts readers={getReaders(item.id)} />}
           </View>
         </TouchableOpacity>
-        </SwipeReply>
+        
         </DoubleTapLike>
       </View>
     );
@@ -1003,12 +1002,12 @@ export default function ChatScreen({ route, navigation }) {
       <View style={[s.inputBar, {backgroundColor: colors.surface}]}>
         {!recording && (
           <>
-            <AnimatedButton onPress={() => { setAttachMenu(!attachMenu); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={s.inputBtn}>
+            <TouchableOpacity onPress={() => { setAttachMenu(!attachMenu); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={s.inputBtn}>
               <Ionicons name={attachMenu ? 'close' : 'add-circle'} size={26} color={colors.purple} />
-            </AnimatedButton>
-            <AnimatedButton style={s.inputBtn} onPress={() => { setShowEmoji(!showEmoji); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}><Ionicons name="happy-outline" size={22} color={showEmoji ? colors.purple : colors.textSecondary} /></AnimatedButton>
-            <AnimatedButton style={s.inputBtn} onPress={() => { setShowStickers(!showStickers); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}><Ionicons name="cube-outline" size={22} color={showStickers ? colors.purple : colors.textSecondary} /></AnimatedButton>
-            <AnimatedButton style={s.inputBtn} onPress={() => { setShowFormat(!showFormat); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}><Ionicons name="text" size={20} color={showFormat ? colors.purple : colors.textSecondary} /></AnimatedButton>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.inputBtn} onPress={() => { setShowEmoji(!showEmoji); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}><Ionicons name="happy-outline" size={22} color={showEmoji ? colors.purple : colors.textSecondary} /></TouchableOpacity>
+            <TouchableOpacity style={s.inputBtn} onPress={() => { setShowStickers(!showStickers); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}><Ionicons name="cube-outline" size={22} color={showStickers ? colors.purple : colors.textSecondary} /></TouchableOpacity>
+            <TouchableOpacity style={s.inputBtn} onPress={() => { setShowFormat(!showFormat); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}><Ionicons name="text" size={20} color={showFormat ? colors.purple : colors.textSecondary} /></TouchableOpacity>
             <TextInput ref={inputRef} style={[s.input, {backgroundColor: colors.surfaceLight, color: colors.text}]} value={text}
               onChangeText={t => { setText(t); matrix.sendTyping(roomId, t.length > 0); }}
               placeholder="Сообщение..." placeholderTextColor={colors.textSecondary} multiline maxLength={4096} />

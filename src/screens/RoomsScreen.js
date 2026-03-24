@@ -198,9 +198,6 @@ export default function RoomsScreen({ navigation }) {
     }
     const isPinned = pinnedIds.includes(item.id);
     return (
-      <SwipeableRow
-        onSwipeRight={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); togglePin(item.id); }}
-        onSwipeLeft={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); Alert.alert('Удалить чат?', item.name, [{text:'Отмена'},{text:'Удалить', style:'destructive', onPress:() => matrix.leaveRoom(item.id)}]); }}>
       <TouchableOpacity style={s.room} onPress={() => navigation.navigate('chat', { roomId: item.id, roomName: item.name })}
         onLongPress={() => setContextRoom(item)} activeOpacity={0.7}>
         <View style={{position:'relative'}}>
@@ -234,7 +231,6 @@ export default function RoomsScreen({ navigation }) {
           </View>
         </View>
       </TouchableOpacity>
-      </SwipeableRow>
     );
   };
 
