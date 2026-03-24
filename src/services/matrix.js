@@ -1,4 +1,8 @@
-import { showMessageNotification } from './notifications';
+let showMessageNotification = () => {};
+try {
+  const n = require('./notifications');
+  showMessageNotification = n.showMessageNotification;
+} catch(e) {}
 
 const BASE = 'http://45.83.178.10:8008/_matrix/client/v3';
 const MEDIA = 'http://45.83.178.10:8008/_matrix/media/v3';

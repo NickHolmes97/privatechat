@@ -3,6 +3,7 @@ import * as Device from 'expo-device';
 import { Platform, AppState } from 'react-native';
 
 // Configure how notifications appear when app is in foreground
+try {
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -10,6 +11,7 @@ Notifications.setNotificationHandler({
     shouldSetBadge: true,
   }),
 });
+} catch(e) {}
 
 let permissionGranted = false;
 
