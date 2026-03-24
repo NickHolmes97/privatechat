@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet, Image, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet, Image, Modal, TextInput, Alert, Animated, PanResponder } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import matrix from '../services/matrix';
@@ -7,6 +7,50 @@ import StoriesRow from '../components/StoriesRow';
 import ChatTabs from '../components/ChatTabs';
 import { colors, onThemeChange } from '../utils/theme';
 import { getHiddenChats, setHiddenChats, getPin, setPin, getFavorites, saveFavorites } from '../services/storage';
+
+// SwipeableRow for room list
+function SwipeableRow({ onSwipeLeft, onSwipeRight, leftColor, rightColor, leftIcon, rightIcon, children }) {
+  const translateX = React.useRef(new Animated.Value(0)).current;
+  const panResponder = React.useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 20 && Math.abs(g.dx) > Math.abs(g.dy * 1.5),
+    onPanResponderMove: (_, g) => {
+      if (Math.abs(g.dx) < 100) translateX.setValue(g.dx);
+    },
+    onPanResponderRelease: (_, g) => {
+      if (g.dx > 60 && onSwipeRight) {
+        Animated.timing(translateX, { toValue: 100, duration: 200, useNativeDriver: true }).start(() => {
+          onSwipeRight();
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+        });
+      } else if (g.dx < -60 && onSwipeLeft) {
+        Animated.timing(translateX, { toValue: -100, duration: 200, useNativeDriver: true }).start(() => {
+          onSwipeLeft();
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+        });
+      } else {
+        Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+      }
+    },
+  })).current;
+  
+  return (
+    <View style={{overflow: 'hidden'}}>
+      <View style={{position:'absolute', left:0, right:0, top:0, bottom:0, flexDirection:'row'}}>
+        <View style={{flex:1, backgroundColor: rightColor || '#34C759', justifyContent:'center', paddingLeft:20}}>
+          <Ionicons name={rightIcon || 'pin'} size={22} color="#fff" />
+        </View>
+        <View style={{flex:1, backgroundColor: leftColor || '#FF3B30', justifyContent:'center', alignItems:'flex-end', paddingRight:20}}>
+          <Ionicons name={leftIcon || 'trash'} size={22} color="#fff" />
+        </View>
+      </View>
+      <Animated.View style={{transform: [{translateX}], backgroundColor: colors.bg}} {...panResponder.panHandlers}>
+        {children}
+      </Animated.View>
+    </View>
+  );
+}
+
+
 
 export default function RoomsScreen({ navigation }) {
   const [activeTab, setActiveTab] = React.useState('all');
@@ -154,6 +198,9 @@ export default function RoomsScreen({ navigation }) {
     }
     const isPinned = pinnedIds.includes(item.id);
     return (
+      <SwipeableRow
+        onSwipeRight={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); togglePin(item.id); }}
+        onSwipeLeft={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); Alert.alert('Удалить чат?', item.name, [{text:'Отмена'},{text:'Удалить', style:'destructive', onPress:() => matrix.leaveRoom(item.id)}]); }}>
       <TouchableOpacity style={s.room} onPress={() => navigation.navigate('chat', { roomId: item.id, roomName: item.name })}
         onLongPress={() => setContextRoom(item)} activeOpacity={0.7}>
         <View style={{position:'relative'}}>
@@ -187,6 +234,7 @@ export default function RoomsScreen({ navigation }) {
           </View>
         </View>
       </TouchableOpacity>
+      </SwipeableRow>
     );
   };
 
@@ -287,11 +335,14 @@ export default function RoomsScreen({ navigation }) {
       </View>
 
       {/* FAB */}
-      <TouchableOpacity style={s.fab} onPress={() => setFabOpen(!fabOpen)}>
-        <Ionicons name={fabOpen ? 'close' : 'create'} size={24} color="#fff" />
+      {fabOpen && <TouchableOpacity activeOpacity={1} onPress={() => setFabOpen(false)} style={{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.4)',zIndex:9}} />}
+      <TouchableOpacity style={[s.fab, {zIndex:11}]} onPress={() => { setFabOpen(!fabOpen); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}>
+        <Animated.View style={{transform:[{rotate: fabOpen ? '45deg' : '0deg'}]}}>
+          <Ionicons name={fabOpen ? 'close' : 'create'} size={24} color="#fff" />
+        </Animated.View>
       </TouchableOpacity>
       {fabOpen && (
-        <View style={s.fabMenu}>
+        <View style={[s.fabMenu, {zIndex:11}]}>
           <TouchableOpacity style={s.fabItem} onPress={() => { setFabOpen(false); navigation.navigate('search'); }}>
             <Ionicons name="person-add" size={20} color="#fff" />
             <Text style={s.fabItemText}>Новый чат</Text>

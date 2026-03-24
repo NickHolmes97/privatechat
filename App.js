@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BackHandler } from 'react-native';
+import { BackHandler, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import matrix from './src/services/matrix';
@@ -34,6 +34,14 @@ export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [screen, setScreen] = useState('rooms');
   const [screenParams, setScreenParams] = useState({});
+  const screenAnim = useRef(new Animated.Value(1)).current;
+  
+  const animateScreen = (fn) => {
+    Animated.timing(screenAnim, { toValue: 0, duration: 120, useNativeDriver: true }).start(() => {
+      fn();
+      Animated.timing(screenAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    });
+  };
   const [history, setHistory] = useState([]);
   const [themeKey, setThemeKey] = useState(0);
 

@@ -35,6 +35,40 @@ import SharedLinks from '../components/SharedLinks';
 import ConnectionBar from '../components/ConnectionBar';
 import { colors, onThemeChange, getChatBg } from '../utils/theme';
 
+
+// SwipeReply - swipe right to reply
+function SwipeReply({ onSwipe, children }) {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 15 && Math.abs(g.dx) > Math.abs(g.dy) && g.dx > 0,
+    onPanResponderMove: (_, g) => {
+      if (g.dx > 0 && g.dx < 80) translateX.setValue(g.dx);
+    },
+    onPanResponderRelease: (_, g) => {
+      if (g.dx > 50) {
+        Animated.spring(translateX, { toValue: 60, useNativeDriver: true, friction: 8 }).start(() => {
+          onSwipe();
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
+        });
+      } else {
+        Animated.spring(translateX, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
+      }
+    },
+  })).current;
+  
+  return (
+    <View style={{position: 'relative'}}>
+      <Animated.View style={{opacity: translateX.interpolate({inputRange:[0,50],outputRange:[0,1],extrapolate:'clamp'}), position:'absolute', left:4, top:'50%', marginTop:-10}}>
+        <Ionicons name="arrow-undo" size={20} color={colors.purple} />
+      </Animated.View>
+      <Animated.View style={{transform: [{translateX}]}} {...panResponder.panHandlers}>
+        {children}
+      </Animated.View>
+    </View>
+  );
+}
+
+
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const URL_REGEX = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/gi;
 
@@ -575,7 +609,8 @@ export default function ChatScreen({ route, navigation }) {
           <View style={s.dateSep}><View style={[s.dateSepLine, {backgroundColor: colors.glassBorder}]} /><Text style={s.dateSepText}>{friendlyDate(item.ts)}</Text><View style={[s.dateSepLine, {backgroundColor: colors.glassBorder}]} /></View>
         )}
         <DoubleTapLike onDoubleTap={() => matrix.sendReaction(roomId, item.id, '❤️')}>
-        <TouchableOpacity activeOpacity={0.7} onLongPress={() => onLongPressMsg(item)} style={[s.msgRow, isMe && s.msgRowMe]}>
+        <SwipeReply onSwipe={() => { setReplyMsg(item); inputRef.current?.focus(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}>
+        <TouchableOpacity activeOpacity={0.7} onLongPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onLongPressMsg(item); }} style={[s.msgRow, isMe && s.msgRowMe]}>
           {showSender && !isMe && (
             <View style={{flexDirection:"row", alignItems:"center", marginBottom:2, marginLeft:4}}>
               <View style={{width:20, height:20, borderRadius:10, backgroundColor:"rgba(124,106,239,0.25)", justifyContent:"center", alignItems:"center", marginRight:6}}>
@@ -680,6 +715,7 @@ export default function ChatScreen({ route, navigation }) {
             {isMe && <ReadReceipts readers={getReaders(item.id)} />}
           </View>
         </TouchableOpacity>
+        </SwipeReply>
         </DoubleTapLike>
       </View>
     );
@@ -980,7 +1016,7 @@ export default function ChatScreen({ route, navigation }) {
           </View>
         )}
         {text.trim() && !recording ? (
-          <TouchableOpacity onPress={send} style={s.sendBtn}><Ionicons name="send" size={20} color="#fff" /></TouchableOpacity>
+          <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); send(); }} style={s.sendBtn} activeOpacity={0.7}><Ionicons name="send" size={20} color="#fff" style={{marginLeft:2}} /></TouchableOpacity>
         ) : recording && recLocked ? null : (
           <View
             style={[s.micBtnWrap, recording ? {backgroundColor: colors.red} : {}]}
