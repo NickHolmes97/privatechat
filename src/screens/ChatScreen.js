@@ -821,6 +821,7 @@ export default function ChatScreen({ route, navigation }) {
         contentContainerStyle={s.msgList}
         onContentSizeChange={() => flatRef.current?.scrollToEnd({ animated: false })}
         ListEmptyComponent={<View style={s.emptyChat}><Ionicons name="chatbubble-outline" size={48} color={colors.textSecondary} /><Text style={s.emptyChatText}>Нет сообщений</Text></View>}
+        ListFooterComponent={typingText ? <View style={{flexDirection:'row', alignItems:'center', paddingLeft:12, paddingVertical:4}}><View style={[s.bubbleOther, {backgroundColor: colors.bubbleIn, paddingHorizontal:12, paddingVertical:8, borderRadius:18}]}><TypingIndicator /></View></View> : null}
       />
 
       {/* Reply/Edit bar */}

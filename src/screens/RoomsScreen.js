@@ -268,7 +268,7 @@ export default function RoomsScreen({ navigation }) {
           </TouchableOpacity>
         ) : renderRoom}
         contentContainerStyle={rooms.length === 0 ? s.empty : undefined}
-        ListEmptyComponent={<View style={s.emptyWrap}><Ionicons name="chatbubbles-outline" size={64} color={colors.textSecondary} /><Text style={s.emptyText}>Нет чатов</Text></View>}
+        ListEmptyComponent={<View style={s.emptyWrap}><View style={{width:80, height:80, borderRadius:40, backgroundColor:'rgba(124,106,239,0.1)', justifyContent:'center', alignItems:'center', marginBottom:16}}><Ionicons name="chatbubbles-outline" size={40} color={colors.purple} /></View><Text style={[s.emptyText, {fontSize:18, fontWeight:'600', color:colors.text}]}>Нет чатов</Text><Text style={[s.emptyText, {fontSize:14, marginTop:4}]}>Нажмите + чтобы начать общение</Text></View>}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.purple} colors={[colors.purple]} />}
       />
 
