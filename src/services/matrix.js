@@ -1,3 +1,5 @@
+import { showMessageNotification } from './notifications';
+
 const BASE = 'http://45.83.178.10:8008/_matrix/client/v3';
 const MEDIA = 'http://45.83.178.10:8008/_matrix/media/v3';
 
@@ -135,6 +137,11 @@ function processSync(data) {
         room.lastMsg = msgtype === 'm.image' ? '📷 Фото' : msgtype === 'm.audio' ? '🎤 Голосовое' : msgtype === 'm.video' ? '🎥 Видео' : msgtype === 'm.file' ? '📎 Файл' : body;
         room.lastTs = ev.origin_server_ts || 0;
         room.lastSender = ev.sender;
+        // Notification for new messages from others
+        if (syncToken && ev.sender !== userId) {
+          const senderName = room.members[ev.sender] || ev.sender?.split(':')[0]?.slice(1) || 'Сообщение';
+          showMessageNotification(senderName, room.lastMsg, rid);
+        }
       }
       if (ev.state_key !== undefined) processState(room, ev);
     }

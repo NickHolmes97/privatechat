@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import matrix from './src/services/matrix';
 import { getSession } from './src/services/storage';
+import { initNotifications, onNotificationTap } from './src/services/notifications';
 import LoginScreen from './src/screens/LoginScreen';
 import RoomsScreen from './src/screens/RoomsScreen';
 import ChatScreen from './src/screens/ChatScreen';
@@ -71,6 +72,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
+        await initNotifications();
         await loadThemeFromStorage();
         const session = await getSession();
         if (session) {
@@ -81,6 +83,11 @@ export default function App() {
       } catch(_) {}
       setReady(true);
     })();
+    const unsub = onNotificationTap((roomId) => {
+      setScreen('chat');
+      setScreenParams({ roomId });
+    });
+    return unsub;
   }, []);
 
   if (!ready) return null;
