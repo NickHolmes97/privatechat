@@ -335,7 +335,7 @@ export default function RoomsScreen({ navigation }) {
       </View>
 
       {/* FAB */}
-      {fabOpen && <TouchableOpacity activeOpacity={1} onPress={() => setFabOpen(false)} style={{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.4)',zIndex:9}} />}
+      {fabOpen && <TouchableOpacity activeOpacity={1} onPress={() => setFabOpen(false)} style={{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.25)',zIndex:9}} />}
       <TouchableOpacity style={[s.fab, {zIndex:11}]} onPress={() => { setFabOpen(!fabOpen); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}>
         <Animated.View style={{transform:[{rotate: fabOpen ? '45deg' : '0deg'}]}}>
           <Ionicons name={fabOpen ? 'close' : 'create'} size={24} color="#fff" />
@@ -394,38 +394,38 @@ function NavBtn({ icon, label, active, onPress }) {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 14, backgroundColor: colors.bg },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: colors.text, letterSpacing: -0.5 },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: colors.text },
   headerActions: { flexDirection: 'row', gap: 8 },
   headerBtn: { padding: 8 },
   hiddenBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: 'rgba(124,106,239,0.1)', marginHorizontal: 12, borderRadius: 12, marginBottom: 4 },
   hiddenBarText: { color: colors.purple, fontSize: 14, fontWeight: '500' },
   hiddenBackBtn: { padding: 12, alignItems: 'center' },
   hiddenBackText: { color: colors.purple, fontSize: 15, fontWeight: '500' },
-  room: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 14, alignItems: 'center', borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.04)' },
+  room: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center' },
   inviteRoom: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center', backgroundColor: 'rgba(124,106,239,0.05)' },
   inviteText: { color: colors.purple, fontSize: 13 },
   acceptBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.green, justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
   declineBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.red, justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
-  avatar: { width: 54, height: 54, borderRadius: 27, backgroundColor: 'rgba(124,106,239,0.2)', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: 'rgba(124,106,239,0.15)' },
-  avatarText: { color: colors.purple, fontWeight: 'bold', fontSize: 20 },
-  avatarImg: { width: 54, height: 54, borderRadius: 27, borderWidth: 1.5, borderColor: 'rgba(124,106,239,0.15)' },
+  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#5B4BC7', justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#fff', fontWeight: '600', fontSize: 20 },
+  avatarImg: { width: 52, height: 52, borderRadius: 26 },
   onlineDot: { position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#34C759', borderWidth: 2, borderColor: colors.bg },
   roomInfo: { flex: 1, marginLeft: 12 },
   roomTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  roomName: { fontSize: 16, fontWeight: '700', color: colors.text, flex: 1, marginRight: 8, letterSpacing: -0.2 },
+  roomName: { fontSize: 16, fontWeight: '600', color: colors.text, flex: 1, marginRight: 8 },
   roomTime: { fontSize: 12, color: colors.textSecondary },
   roomBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
   roomMsg: { fontSize: 14, color: colors.textSecondary, flex: 1, marginRight: 8 },
-  badge: { backgroundColor: colors.purple, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, minWidth: 22, alignItems: 'center', elevation: 2, shadowColor: colors.purple, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4 },
+  badge: { backgroundColor: colors.purple, borderRadius: 11, paddingHorizontal: 6, paddingVertical: 2, minWidth: 22, alignItems: 'center' },
   badgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
   empty: { flex: 1 },
   emptyWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { color: colors.textSecondary, fontSize: 16, marginTop: 12 },
-  bottomNav: { flexDirection: 'row', backgroundColor: colors.surface, paddingBottom: 24, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colors.glassBorder, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.15, shadowRadius: 8 },
+  bottomNav: { flexDirection: 'row', backgroundColor: colors.surface, paddingBottom: 20, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colors.glassBorder },
   navBtn: { flex: 1, alignItems: 'center' },
   navLabel: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },
   // FAB
-  fab: { position: 'absolute', right: 18, bottom: 90, width: 58, height: 58, borderRadius: 29, backgroundColor: colors.purple, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: colors.purple, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 12 },
+  fab: { position: 'absolute', right: 16, bottom: 88, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.purple, justifyContent: 'center', alignItems: 'center', elevation: 4 },
   fabMenu: { position: 'absolute', right: 16, bottom: 152, backgroundColor: colors.surface, borderRadius: 16, padding: 8, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
   fabItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, gap: 12 },
   fabItemText: { color: '#fff', fontSize: 15 },

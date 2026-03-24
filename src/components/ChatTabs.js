@@ -29,6 +29,6 @@ export default function ChatTabs({ active, onChange }) {
 const s = StyleSheet.create({
   row: { maxHeight: 44, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.06)' },
   content: { paddingHorizontal: 12, paddingVertical: 6, gap: 8 },
-  tab: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(124,106,239,0.08)' },
-  tabText: { color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
+  tab: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(124,106,239,0.08)' },
+  tabText: { color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: '600' },
 });
