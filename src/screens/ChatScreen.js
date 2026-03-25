@@ -344,41 +344,43 @@ export default function ChatScreen({ route, navigation }) {
     setSending(false);
   };
 
-  const pickImage = async () => {
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7, maxWidth: 1280, maxHeight: 1280 });
-    if (r.canceled) return;
-    const asset = r.assets[0]; setSending(true);
-    try {
-      let info = { exists: true, size: 0 }; try { info = await FileSystem.getInfoAsync(asset.uri); } catch(_) {}
-      const resp = await FileSystem.uploadAsync(
-        `http://45.83.178.10:8008/_matrix/media/v3/upload?filename=image.jpg`, asset.uri,
-        { httpMethod: 'POST', headers: { 'Authorization': `Bearer ${matrix.getToken()}`, 'Content-Type': asset.mimeType || 'image/jpeg' }, uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT }
-      );
-      const { content_uri } = JSON.parse(resp.body);
-      await matrix.sendImage(roomId, content_uri, 'image.jpg', asset.mimeType || 'image/jpeg', info.size || 0);
-      await loadMsgs(); setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
-    } catch(e) { Alert.alert('Ошибка', e.message); }
-    setSending(false);
-  };
-
   const takePhoto = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) return Alert.alert('', 'Нет доступа к камере');
-    const r = await ImagePicker.launchCameraAsync({ quality: 0.7, maxWidth: 1280, maxHeight: 1280 });
+    if (!perm.granted) return Alert.alert('Нет доступа к камере');
+    const r = await ImagePicker.launchCameraAsync({ quality: 0.7 });
     if (r.canceled) return;
     const asset = r.assets[0]; setSending(true);
     try {
-      let info = { exists: true, size: 0 }; try { info = await FileSystem.getInfoAsync(asset.uri); } catch(_) {}
       const resp = await FileSystem.uploadAsync(
         `http://45.83.178.10:8008/_matrix/media/v3/upload?filename=photo.jpg`, asset.uri,
         { httpMethod: 'POST', headers: { 'Authorization': `Bearer ${matrix.getToken()}`, 'Content-Type': 'image/jpeg' }, uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT }
       );
       const { content_uri } = JSON.parse(resp.body);
-      await matrix.sendImage(roomId, content_uri, 'photo.jpg', 'image/jpeg', info.size || 0);
-      await loadMsgs();
+      await matrix.sendImage(roomId, content_uri, 'photo.jpg', 'image/jpeg', 0);
+      await loadMsgs(); setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
     } catch(e) { Alert.alert('Ошибка', e.message); }
     setSending(false);
   };
+
+  const pickImage = async () => {
+    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7, allowsMultipleSelection: true, selectionLimit: 10 });
+    if (r.canceled) return;
+    setSending(true);
+    try {
+      for (const asset of r.assets) {
+        let info = { exists: true, size: 0 }; try { info = await FileSystem.getInfoAsync(asset.uri); } catch(_) {}
+        const resp = await FileSystem.uploadAsync(
+          `http://45.83.178.10:8008/_matrix/media/v3/upload?filename=image.jpg`, asset.uri,
+          { httpMethod: 'POST', headers: { 'Authorization': `Bearer ${matrix.getToken()}`, 'Content-Type': asset.mimeType || 'image/jpeg' }, uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT }
+        );
+        const { content_uri } = JSON.parse(resp.body);
+        await matrix.sendImage(roomId, content_uri, 'image.jpg', asset.mimeType || 'image/jpeg', info.size || 0);
+      }
+      await loadMsgs(); setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
+    } catch(e) { Alert.alert('Ошибка', e.message); }
+    setSending(false);
+  };
+
 
   const pickFile = async () => {
     try {
@@ -953,6 +955,10 @@ export default function ChatScreen({ route, navigation }) {
       {/* Attach menu */}
       {attachMenu && (
         <View style={[s.attachMenu, {backgroundColor: colors.surface}]}>
+          <TouchableOpacity style={s.attachItem} onPress={() => { setAttachMenu(false); takePhoto(); }}>
+            <View style={[s.attachIcon, {backgroundColor:'#E74C3C'}]}><Ionicons name="camera" size={20} color="#fff" /></View>
+            <Text style={s.attachLabel}>Камера</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={s.attachItem} onPress={() => { setAttachMenu(false); pickImage(); }}>
             <View style={[s.attachIcon, {backgroundColor:'#7C6AEF'}]}><Ionicons name="image" size={20} color="#fff" /></View>
             <Text style={s.attachLabel}>Галерея</Text>
